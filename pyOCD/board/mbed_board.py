@@ -37,6 +37,7 @@ TARGET_TYPE = {
                 "1050": "lpc800",
                 "1070": "nrf51822",
                 "1080": "stm32f103rc",
+                "1090": "stm32f051",
               }
 
 mbed_vid = 0x0d28
@@ -99,9 +100,9 @@ class MbedBoard(Board):
                     print "%d => %s boardId => %s" % (index, new_mbed.getInfo().encode('ascii', 'ignore'), new_mbed.unique_id)
                     mbed.close()
                     index += 1
-                except Exception as e:
-                    print "received exception: %s" % e
+                except:
                     mbed.close()
+                    raise
         else:
             print "No available boards is connected"
         
@@ -123,9 +124,9 @@ class MbedBoard(Board):
                 
             mbed_boards = []
             for mbed in all_mbeds:
-                mbed.write([0x80])
-                u_id_ = mbed.read()
                 try:
+                    mbed.write([0x80])
+                    u_id_ = mbed.read()
                     if target_override:
                         target_type = target_override
                     else:
@@ -143,9 +144,10 @@ class MbedBoard(Board):
                     mbed_boards.append(new_mbed)
                     if close:
                         mbed.close()
-                except Exception as e:
-                    print "received exception: %s" % e
+                except:
+                    #TODO - close all boards when an exception occurs
                     mbed.close()
+                    raise
             
             if len(mbed_boards) > 0 or not blocking:
                 return mbed_boards
@@ -181,15 +183,9 @@ class MbedBoard(Board):
             else:
                 try:
                     all_mbeds[0].init()
-                except Exception as e:
-                    try:
-                        print e
-                    except:
-                        pass
-                    finally:
-                        all_mbeds[0].interface.close()
-                        raise e
-
+                except:
+                    all_mbeds[0].interface.close()
+                    raise
                 return all_mbeds[0]
         
         try:
@@ -206,10 +202,15 @@ class MbedBoard(Board):
             elif not return_first:
                 while True:
                     print "input id num to choice your board want to connect"
-                    ch = sys.stdin.readline()
-                    sys.stdin.flush()
-                    if (int(ch) < 0) or (int(ch) >= len(all_mbeds)):
-                        logging.info("BAD CHOICE: %d", int(ch))
+                    line = sys.stdin.readline()
+                    valid = False
+                    try:
+                        ch = int(line)
+                        valid = 0 <= ch < len(all_mbeds)
+                    except ValueError:
+                        pass
+                    if not valid:
+                        logging.info("BAD CHOICE: %s", line)
                         index = 0
                         for mbed in all_mbeds:
                             print "%d => %s" % ( index, mbed.getInfo())
@@ -223,11 +224,7 @@ class MbedBoard(Board):
         
             all_mbeds[int(ch)].init()
             return all_mbeds[int(ch)]
-        except Exception as e:
-            try:
-                print e
-            except:
-                pass
-            finally:
-                for mbed in all_mbeds:
-                    mbed.interface.close()
+        except:
+            for mbed in all_mbeds:
+                mbed.interface.close()
+            raise

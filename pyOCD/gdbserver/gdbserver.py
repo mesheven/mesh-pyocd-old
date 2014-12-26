@@ -17,7 +17,8 @@
         
 import logging, threading, socket
 from pyOCD.target.cortex_m import CORE_REGISTER
-from pyOCD.target.target import TARGET_HALTED
+from pyOCD.target.target import TARGET_HALTED, WATCHPOINT_READ, WATCHPOINT_WRITE, WATCHPOINT_READ_WRITE
+from pyOCD.transport import TransferError
 from struct import unpack
 from time import sleep
 import sys
@@ -255,20 +256,39 @@ class GDBServer(threading.Thread):
         return self.createRSPPacket("")
         
     def breakpoint(self, data):
-        # handle Z1/z1 commands
-        addr = int(data.split(',')[1], 16)
+        # handle breakpoint/watchpoint commands
+        split = data.split('#')[0].split(',')
+        addr = int(split[1], 16)
+
+        # handle hardware breakpoint Z1/z1
         if data[1] == '1':
             if data[0] == 'Z':
                 if self.target.setBreakpoint(addr) == False:
-                    resp = "ENN"
-                    return self.createRSPPacket(resp)
+                    return self.createRSPPacket('E01') #EPERM
             else:
                 self.target.removeBreakpoint(addr)
-            resp = "OK"
-            return self.createRSPPacket(resp)
-        
-        return None
-            
+            return self.createRSPPacket("OK")
+
+        # handle hardware watchpoint Z2/z2/Z3/z3/Z4/z4
+        if data[1] == '2':
+            # Write-only watch
+            watchpoint_type = WATCHPOINT_WRITE
+        elif data[1] == '3':
+            # Read-only watch
+            watchpoint_type = WATCHPOINT_READ
+        elif data[1] == '4':
+            # Read-Write watch
+            watchpoint_type = WATCHPOINT_READ_WRITE
+        else:
+            return self.createRSPPacket('E01') #EPERM
+        size = int(split[2], 16)
+        if data[0] == 'Z':
+            if self.target.setWatchpoint(addr, size, watchpoint_type) == False:
+                return self.createRSPPacket('E01') #EPERM
+        else:
+            self.target.removeWatchpoint(addr, size, watchpoint_type)
+        return self.createRSPPacket("OK")
+
     def resume(self):
         self.ack()
         self.abstract_socket.setBlocking(0)
@@ -455,15 +475,17 @@ class GDBServer(threading.Thread):
         length = split[1]
         length = int(length[:len(length)-3],16)
         
-        val = ''
-        
-        mem = self.target.readBlockMemoryUnaligned8(addr, length)
-        for x in mem:
-            if x >= 0x10:
-                val += hex(x)[2:4]
-            else:
-                val += '0' + hex(x)[2:3]
-            
+        try:
+            val = ''
+            mem = self.target.readBlockMemoryUnaligned8(addr, length)
+            for x in mem:
+                if x >= 0x10:
+                    val += hex(x)[2:4]
+                else:
+                    val += '0' + hex(x)[2:3]
+        except TransferError:
+            logging.debug("getMemory failed at 0x%x" % addr)
+            val = 'E01' #EPERM
         return self.createRSPPacket(val)
     
     def writeMemory(self, data):
@@ -481,10 +503,15 @@ class GDBServer(threading.Thread):
         data = data[idx_begin:len(data) - 3]
         data = self.unescape(data)
         
-        if length > 0:
-            self.target.writeBlockMemoryUnaligned8(addr, data)
+        try:
+            if length > 0:
+                self.target.writeBlockMemoryUnaligned8(addr, data)
+            resp = "OK"
+        except TransferError:
+            logging.debug("writeMemory failed at 0x%x" % addr)
+            resp = 'E01' #EPERM
         
-        return self.createRSPPacket("OK")
+        return self.createRSPPacket(resp)
         
     def readRegister(self, data):
         num = int(data.split('#')[0], 16)
