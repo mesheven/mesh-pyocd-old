@@ -1,6 +1,6 @@
 """
  mbed CMSIS-DAP debugger
- Copyright (c) 2006-2013 ARM Limited
+ Copyright (c) 2006-2015 ARM Limited
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -14,13 +14,12 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
-        
+
 import logging, threading, socket
-from pyOCD.target.cortex_m import CORE_REGISTER
 from pyOCD.target.target import TARGET_HALTED, WATCHPOINT_READ, WATCHPOINT_WRITE, WATCHPOINT_READ_WRITE
 from pyOCD.transport import TransferError
 from struct import unpack
-from time import sleep
+from time import sleep, time
 import sys
 from gdb_socket import GDBSocket
 from gdb_websocket import GDBWebSocket
@@ -68,6 +67,10 @@ class GDBServer(threading.Thread):
         else:
             self.port = port_urlWSS
         self.break_at_hardfault = bool(options.get('break_at_hardfault', True))
+        self.board.target.setVectorCatchFault(self.break_at_hardfault)
+        self.break_on_reset = options.get('break_on_reset', False)
+        self.board.target.setVectorCatchReset(self.break_on_reset)
+        self.step_into_interrupt = options.get('step_into_interrupt', False)
         self.packet_size = 2048
         self.flashData = list()
         self.flashOffset = None
@@ -106,6 +109,7 @@ class GDBServer(threading.Thread):
         return
         
     def run(self):
+        self.timeOfLastPacket = time()
         while True:
             new_command = False
             data = ""
@@ -140,6 +144,12 @@ class GDBServer(threading.Thread):
                     if (new_command == True):
                         new_command = False
                         break
+
+                    # Reduce CPU usage by sleep()ing once we know that the
+                    # debugger doesn't have a queue of commands that we should
+                    # execute as quickly as possible.
+                    if time() - self.timeOfLastPacket > 0.5:
+                        sleep(0.1)
                     try:
                         if self.shutdown_event.isSet() or self.detach_event.isSet():
                             break
@@ -188,7 +198,9 @@ class GDBServer(threading.Thread):
                         self.abstract_socket.close()
                         self.lock.release()
                         break
-                    
+
+                    self.timeOfLastPacket = time()
+
                 self.lock.release()
         
         
@@ -211,14 +223,14 @@ class GDBServer(threading.Thread):
             return self.lastSignal(), 1, 0
         
         elif msg[1] == 'g':
-            return self.getRegister(), 1, 0
-        
-        elif msg[1] == 'p':
-            return self.readRegister(msg[2:]), 1, 0
-        
+            return self.getRegisters(), 1, 0
+
+        elif msg[1] == 'G':
+            return self.setRegisters(msg[2:]), 1, 0
+
         elif msg[1] == 'P':
             return self.writeRegister(msg[2:]), 1, 0
-        
+
         elif msg[1] == 'm':
             return self.getMemory(msg[2:]), 1, 0
         
@@ -292,28 +304,20 @@ class GDBServer(threading.Thread):
     def resume(self):
         self.ack()
         self.abstract_socket.setBlocking(0)
-        
-        # Try to set break point at hardfault handler to avoid
-        # halting target constantly
-        if not self.break_at_hardfault:
-            bpSet=False
-        elif (self.target.availableBreakpoint() >= 1):
-            bpSet=True
-            hardfault_handler = self.target.readMemory(4*3)
-            self.target.setBreakpoint(hardfault_handler)
-        else:
-            bpSet=False
-            logging.info("No breakpoint available. Interfere target constantly.")
 
         self.target.resume()
         
         val = ''
-        
+
+        self.timeOfLastPacket = time()
         while True:
-            sleep(0.01)
             if self.shutdown_event.isSet():
                 return self.createRSPPacket(val), 0, 0
-            
+
+            # Introduce a delay between non-blocking socket reads once we know
+            # that the CPU isn't going to halt quickly.
+            if time() - self.timeOfLastPacket > 0.5:
+                sleep(0.1)
             try:
                 data = self.abstract_socket.read()
                 if (data[0] == '\x03'):
@@ -337,26 +341,12 @@ class GDBServer(threading.Thread):
             except:
                 logging.debug('Target is unavailable temporary.')
 
-            if (not bpSet) and self.break_at_hardfault:
-                # Only do this when no bp available as it slows resume operation
-                self.target.halt()
-                xpsr = self.target.readCoreRegister('xpsr')
-                logging.debug("GDB resume xpsr: 0x%X", xpsr)
-                # Get IPSR value from XPSR
-                if (xpsr & 0x1f) == 3:
-                    val = "S" + FAULT[3]
-                    break
-                self.target.resume()
-        
-        if bpSet and self.break_at_hardfault:
-            self.target.removeBreakpoint(hardfault_handler)
-
         self.abstract_socket.setBlocking(1)
         return self.createRSPPacket(val), 0, 0
     
     def step(self):
         self.ack()
-        self.target.step()
+        self.target.step(not self.step_into_interrupt)
         return self.createRSPPacket("S05"), 0, 0
     
     def halt(self):
@@ -512,45 +502,20 @@ class GDBServer(threading.Thread):
             resp = 'E01' #EPERM
         
         return self.createRSPPacket(resp)
-        
-    def readRegister(self, data):
-        num = int(data.split('#')[0], 16)
-        reg = self.target.readCoreRegister(num)
-        logging.debug("GDB: read reg %d: 0x%X", num, reg)
-        val = self.intToHexGDB(reg)
-        return self.createRSPPacket(val)
-    
+
     def writeRegister(self, data):
-        num = int(data.split('=')[0], 16)
+        reg = int(data.split('=')[0], 16)
         val = data.split('=')[1].split('#')[0]
-        val = val[6:8] + val[4:6] + val[2:4] + val[0:2]
-        logging.debug("GDB: write reg %d: 0x%X", num, int(val, 16))
-        self.target.writeCoreRegister(num, int(val, 16))
+        self.target.setRegister(reg, val)
         return self.createRSPPacket("OK")
-    
-    def intToHexGDB(self, val):
-        val = hex(int(val))[2:]
-        size = len(val)
-        r = ''
-        for i in range(8-size):
-            r += '0'
-        r += str(val)
-        
-        resp = ''
-        for i in range(4):
-            resp += r[8 - 2*i - 2: 8 - 2*i]
-        
-        return resp
-            
-    def getRegister(self):
-        resp = ''
-        # only core registers are printed
-        for i in sorted(CORE_REGISTER.values())[4:20]:
-            reg = self.target.readCoreRegister(i)
-            resp += self.intToHexGDB(reg)
-            logging.debug("GDB reg: %s = 0x%X", self.target.getRegisterName(i), reg)
-        return self.createRSPPacket(resp)
-        
+
+    def getRegisters(self):
+        return self.createRSPPacket(self.target.getRegisterContext())
+
+    def setRegisters(self, data):
+        self.target.setRegisterContext(data)
+        return self.createRSPPacket("OK")
+
     def lastSignal(self):
         fault = self.target.readCoreRegister('xpsr') & 0xff
         try:
@@ -677,7 +642,7 @@ class GDBServer(threading.Thread):
         if query == 'memory_map':
             xml = self.target.memoryMapXML
         elif query == 'read_feature':
-            xml = self.target.targetXML
+            xml = self.target.getTargetXML()
 
         size_xml = len(xml)
         
