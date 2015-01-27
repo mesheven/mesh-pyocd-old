@@ -51,11 +51,11 @@ class MbedBoard(Board):
     Particularly, this class allows you to dynamically determine
     the type of all boards connected based on the id board
     """
-    def __init__(self, target, flash, interface, transport = "cmsis_dap"):
+    def __init__(self, target, flash, interface, transport = "cmsis_dap", frequency = 1000000):
         """
         Init the board
         """
-        super(MbedBoard, self).__init__(target, flash, interface, transport)
+        super(MbedBoard, self).__init__(target, flash, interface, transport, frequency)
         self.unique_id = ""
         self.target_type = ""
     
@@ -109,7 +109,8 @@ class MbedBoard(Board):
             print "No available boards is connected"
         
     @staticmethod
-    def getAllConnectedBoards(transport = "cmsis_dap", close = False, blocking = True, target_override = None):
+    def getAllConnectedBoards(transport = "cmsis_dap", close = False, blocking = True, 
+                                target_override = None, frequency = 1000000):
         """
         Return an array of all mbed boards connected
         """
@@ -139,7 +140,7 @@ class MbedBoard(Board):
                         else:
                             target_type = TARGET_TYPE[target_type]
                         
-                    new_mbed = MbedBoard("target_" + target_type, "flash_" + target_type, mbed, transport)
+                    new_mbed = MbedBoard("target_" + target_type, "flash_" + target_type, mbed, transport, frequency)
                     new_mbed.target_type = target_type
                     new_mbed.unique_id = array.array('B', [i for i in u_id_[2:2+u_id_[1]]]).tostring()
                     logging.info("new board id detected: %s", new_mbed.unique_id)
@@ -159,11 +160,11 @@ class MbedBoard(Board):
                 first = False
     
     @staticmethod
-    def chooseBoard(transport = "cmsis_dap", blocking = True, return_first = False, board_id = None, target_override = None):
+    def chooseBoard(transport = "cmsis_dap", blocking = True, return_first = False, board_id = None, target_override = None, frequency = 1000000):
         """
         Allow you to select a board among all boards connected
         """
-        all_mbeds = MbedBoard.getAllConnectedBoards(transport, False, blocking, target_override)
+        all_mbeds = MbedBoard.getAllConnectedBoards(transport, False, blocking, target_override, frequency)
         
         if all_mbeds == None:
             return None
