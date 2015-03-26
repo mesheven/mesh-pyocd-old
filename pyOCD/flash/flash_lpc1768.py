@@ -1,6 +1,6 @@
 """
  mbed CMSIS-DAP debugger
- Copyright (c) 2006-2013 ARM Limited
+ Copyright (c) 2006-2015 ARM Limited
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -39,14 +39,29 @@ flash_algo = { 'load_address' : 0x10000000,
                                 ],
                'pc_init' : 0x10000047,
                'pc_eraseAll' : 0x100000e1,
+               'pc_erase_sector' : 0x10000123,
                'pc_program_page' : 0x10000169,
-               'begin_data' : 0x1000023c,
+               'begin_data' : 0x2007c000,
                'begin_stack' : 0x10001000,
                'static_base' : 0x10000214,
-               'page_size' : 1024
+               'page_size' : 0x8000
               };
-              
+
 class Flash_lpc1768(Flash):
-    
+
     def __init__(self, target):
         super(Flash_lpc1768, self).__init__(target, flash_algo)
+
+    def erasePage(self, flashPtr):
+        if flashPtr < 0x10000:
+            erase_size = 0x1000
+        else:
+            erase_size = 0x8000
+        for i in range(0, 0x8000 / erase_size):
+            Flash.erasePage(self, flashPtr + i * erase_size)
+
+    def programPage(self, flashPtr, bytes):
+        write_size = 1024
+        for i in range(0, 32):
+            data = bytes[i * write_size : (i + 1) * write_size]
+            Flash.programPage(self, flashPtr + i * write_size, data)
