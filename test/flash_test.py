@@ -116,6 +116,16 @@ def flash_test(board_id):
             rom_size = 0x40000
             # Override clock since 10MHz is too fast
             test_clock = 1000000
+        elif target_type == "maxwsnenv":
+            ram_start = 0x20000000
+            ram_size = 0x8000
+            rom_start = 0x00000000
+            rom_size = 0x40000
+        elif target_type == "max32600mbed":
+            ram_start = 0x20000000
+            ram_size = 0x8000
+            rom_start = 0x00000000
+            rom_size = 0x40000
         else:
             raise Exception("The board is not supported by this test script.")
 
@@ -181,9 +191,7 @@ def flash_test(board_id):
                         print("Progress went backwards during flash")
         print_progress.prev_progress = 0
 
-        binary_file = "l1_"
-        binary_file += target_type + ".bin"
-        binary_file = os.path.join(parentdir, 'binaries', binary_file)
+        binary_file = os.path.join(parentdir, 'binaries', board.getTestBinary())
         with open(binary_file, "rb") as f:
             data = f.read()
         data = struct.unpack("%iB" % len(data), data)
