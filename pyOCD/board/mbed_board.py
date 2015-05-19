@@ -53,6 +53,9 @@ BOARD_ID_TO_INFO = {
                 "1605": BoardInfo(  "Bambino 210E",         "lpc4330",          "l1_lpc4330.bin",       ),
                 "0400": BoardInfo(  "maxwsnenv",            "maxwsnenv",        "l1_maxwsnenv.bin",     ),
                 "0405": BoardInfo(  "max32600mbed",         "max32600mbed",     "l1_max32600mbed.bin",  ),
+                "2000": BoardInfo(  "DT01 + MB3002",        "stm32f405",        "l1_stm32f405.bin",     ),
+                "2001": BoardInfo(  "BB2002/BB3002",        "stm32f405",        "l1_stm32f405.bin",     ),
+
               }
 
 mbed_vid = 0x0d28
