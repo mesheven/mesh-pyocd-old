@@ -17,6 +17,17 @@
 
 from flash import Flash, PageInfo, DEFAULT_PAGE_PROGRAM_WEIGHT, DEFAULT_PAGE_ERASE_WEIGHT
 
+STM32F405_FLASH_16K_ADDRESS  = 0x08000000
+STM32F405_FLASH_64K_ADDRESS  = 0x08010000
+STM32F405_FLASH_128K_ADDRESS = 0x08020000
+FLASH_16K_PAGE_SIZE          = 0x4000
+FLASH_64K_PAGE_SIZE          = 0x10000
+FLASH_128K_PAGE_SIZE         = 0x20000
+PAGE_SIZE_WEIGHT_4X          = 4
+PAGE_SIZE_WEIGHT_8X          = 8
+
+
+
 
 
 flash_algo = { 'load_address' : 0x20000000,
@@ -56,19 +67,26 @@ class Flash_stm32f405(Flash):
 
     def getPageInfo(self, addr):
         info = PageInfo()
-        if addr < 0x08010000:
+        if addr >=STM32F405_FLASH_16K_ADDRESS and addr < STM32F405_FLASH_64K_ADDRESS:
             info.erase_weight = DEFAULT_PAGE_ERASE_WEIGHT
             info.program_weight = DEFAULT_PAGE_PROGRAM_WEIGHT
-            info.size = 0x4000
-        elif addr < 0x08020000:
-            info.erase_weight = DEFAULT_PAGE_ERASE_WEIGHT * 4
-            info.program_weight = DEFAULT_PAGE_PROGRAM_WEIGHT * 4
-            info.size = 0x10000
+            info.size = FLASH_16K_PAGE_SIZE
+        elif addr >=STM32F405_FLASH_64K_ADDRESS  and addr < STM32F405_FLASH_128K_ADDRESS:
+            info.erase_weight = DEFAULT_PAGE_ERASE_WEIGHT * PAGE_SIZE_WEIGHT_4X
+            info.program_weight = DEFAULT_PAGE_PROGRAM_WEIGHT * PAGE_SIZE_WEIGHT_4X
+            info.size = FLASH_64K_PAGE_SIZE
         else:
-            info.erase_weight = DEFAULT_PAGE_ERASE_WEIGHT * 8
-            info.program_weight = DEFAULT_PAGE_PROGRAM_WEIGHT * 8
-            info.size = 0x20000
+            info.erase_weight = DEFAULT_PAGE_ERASE_WEIGHT * PAGE_SIZE_WEIGHT_8X
+            info.program_weight = DEFAULT_PAGE_PROGRAM_WEIGHT * PAGE_SIZE_WEIGHT_8X
+            info.size = FLASH_128K_PAGE_SIZE
 
         return info
+
+    def programPage(self, flashPtr, bytes):
+        pages = (len(bytes) + FLASH_16K_PAGE_SIZE - 1) // FLASH_16K_PAGE_SIZE
+
+        for i in range(0, pages):
+            data = bytes[i * FLASH_16K_PAGE_SIZE : (i + 1) * FLASH_16K_PAGE_SIZE]
+            Flash.programPage(self, flashPtr + i * FLASH_16K_PAGE_SIZE, data)
 
 
