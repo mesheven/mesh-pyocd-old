@@ -20,13 +20,15 @@ from time import sleep, time
 from random import randrange
 import math
 import struct
+import traceback
+import argparse
 
 parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, parentdir)
 
 import pyOCD
 from pyOCD.board import MbedBoard
-from pyOCD.target.cortex_m import float2int
+from pyOCD.utility.conversion import float2int
 from pyOCD.flash.flash import FLASH_PAGE_ERASE, FLASH_CHIP_ERASE
 from test_util import Test, TestResult
 
@@ -90,6 +92,7 @@ class FlashTest(Test):
             result = FlashTestResult()
             result.passed = False
             print("Exception %s when testing board %s" % (e, board.getUniqueID()))
+            traceback.print_exc(file=sys.stdout)
         result.board = board
         result.test = self
         return result
@@ -114,6 +117,11 @@ def flash_test(board_id):
             ram_size = 0x4000
             rom_start = 0x00000000
             rom_size = 0x20000
+        elif target_type == "kl28z":
+            ram_start = 0x1fffa000
+            ram_size = 96*1024
+            rom_start = 0x00000000
+            rom_size = 512*1024
         elif target_type == "kl46z":
             ram_start = 0x1fffe000
             ram_size = 0x8000
@@ -149,7 +157,7 @@ def flash_test(board_id):
             ram_size = 0x1000
             rom_start = 0x00000000
             rom_size = 0x4000
-        elif target_type == "nrf51822":
+        elif target_type == "nrf51":
             ram_start = 0x20000000
             ram_size = 0x4000
             rom_start = 0x00000000
@@ -202,6 +210,7 @@ def flash_test(board_id):
                 sys.stdout.write('\r')
                 i = int(progress*20.0)
                 sys.stdout.write("[%-20s] %3d%%" % ('='*i, round(progress * 100)))
+                sys.stdout.flush()
 
             # Finish on 1.0
             if progress >= 1.0:
@@ -220,6 +229,9 @@ def flash_test(board_id):
 
         addr = rom_start
         size = len(data)
+
+        # Turn on extra checks for the next 4 tests
+        flash.setFlashAlgoDebug(True)
 
         print "\r\n\r\n------ Test Basic Page Erase ------"
         info = flash.flashBlock(addr, data, False, False, progress_cb = print_progress)
@@ -261,6 +273,8 @@ def flash_test(board_id):
             print("TEST FAILED")
         test_count += 1
 
+        flash.setFlashAlgoDebug(False)
+
         print "\r\n\r\n------ Test Basic Page Erase (Entire chip) ------"
         new_data = list(data)
         new_data.extend(unused * [0x77])
@@ -269,6 +283,15 @@ def flash_test(board_id):
             print("TEST PASSED")
             test_pass_count += 1
             result.page_erase_rate = float(len(new_data)) / float(info.program_time)
+        else:
+            print("TEST FAILED")
+        test_count += 1
+
+        print "\r\n\r\n------ Test Fast Verify ------"
+        info = flash.flashBlock(0, new_data, progress_cb = print_progress, fast_verify=True)
+        if info.program_type == FLASH_PAGE_ERASE:
+            print("TEST PASSED")
+            test_pass_count += 1
         else:
             print("TEST FAILED")
         test_count += 1
@@ -335,6 +358,17 @@ def flash_test(board_id):
         test_pass_count += 1
         test_count += 1
 
+        # Only run test if the reset handler can be programmed (rom start at address 0)
+        if rom_start == 0:
+            print "\r\n\r\n------ Test Non-Thumb reset handler ------"
+            non_thumb_data = list(data)
+            # Clear bit 0 of 2nd word - reset handler
+            non_thumb_data[4] = non_thumb_data[4] & ~1 
+            flash.flashBlock(rom_start, non_thumb_data)
+            flash.flashBlock(rom_start, data)
+            print("TEST PASSED")
+            test_pass_count += 1
+            test_count += 1
 
         # Note - The decision based tests below are order dependent since they
         # depend on the previous state of the flash
@@ -405,6 +439,14 @@ def flash_test(board_id):
         return result
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
+    parser = argparse.ArgumentParser(description='pyOCD flash test')
+    parser.add_argument('-d', '--debug', action="store_true", help='Enable debug logging')
+    args = parser.parse_args()
+    level = logging.DEBUG if args.debug else logging.INFO
+    logging.basicConfig(level=level)
     # Set to debug to print some of the decisions made while flashing
-    flash_test(None)
+    board = pyOCD.board.mbed_board.MbedBoard.getAllConnectedBoards(close = True)[0]
+    test = FlashTest()
+    result = [test.run(board)]
+    test.print_perf_info(result)
+

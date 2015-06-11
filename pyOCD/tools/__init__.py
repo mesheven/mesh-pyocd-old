@@ -14,12 +14,3 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
-
-import board
-import flash
-import gdbserver
-import interface
-import target
-import transport
-import utility
-

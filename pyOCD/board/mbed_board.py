@@ -38,6 +38,7 @@ BOARD_ID_TO_INFO = {
                 "0240": BoardInfo(  "FRDM-K64F",            "k64f",             "l1_k64f.bin",          ),
                 "0250": BoardInfo(  "FRDM-KL02Z",           "kl02z",            "l1_kl02z.bin",         ),
                 "0260": BoardInfo(  "FRDM-KL26Z",           "kl26z",            "l1_kl26z.bin",         ),
+                "0290": BoardInfo(  "FRDM-KL28Z",           "kl28z",            "l1_kl28z.bin",         ),
                 "1010": BoardInfo(  "mbed NXP LPC1768",     "lpc1768",          "l1_lpc1768.bin",       ),
                 "9004": BoardInfo(  "Arch Pro",             "lpc1768",          "l1_lpc1768.bin",       ),
                 "1040": BoardInfo(  "mbed NXP LPC11U24",    "lpc11u24",         "l1_lpc11u24.bin",      ),
@@ -55,7 +56,7 @@ BOARD_ID_TO_INFO = {
                 "0405": BoardInfo(  "max32600mbed",         "max32600mbed",     "l1_max32600mbed.bin",  ),
                 "2000": BoardInfo(  "DT01 + MB3002",        "stm32f405",        "l1_stm32f405.bin",     ),
                 "2001": BoardInfo(  "BB2002/BB3002",        "stm32f405",        "l1_stm32f405.bin",     ),
-
+                "1100": BoardInfo(  "nRF51-DK",             "nrf51",            "l1_nrf51-dk.bin",      ),
               }
 
 mbed_vid = 0x0d28
@@ -136,7 +137,7 @@ class MbedBoard(Board):
             print("No available boards are connected")
         
     @staticmethod
-    def getAllConnectedBoards(transport = "cmsis_dap", close = False, blocking = True, 
+    def getAllConnectedBoards(transport = "cmsis_dap", close = False, blocking = True,
                                 target_override = None, frequency = 1000000):
         """
         Return an array of all mbed boards connected
@@ -199,7 +200,7 @@ class MbedBoard(Board):
                 first = False
     
     @staticmethod
-    def chooseBoard(transport = "cmsis_dap", blocking = True, return_first = False, board_id = None, target_override = None, frequency = 1000000):
+    def chooseBoard(transport = "cmsis_dap", blocking = True, return_first = False, board_id = None, target_override = None, frequency = 1000000, init_board = True):
         """
         Allow you to select a board among all boards connected
         """
@@ -262,11 +263,12 @@ class MbedBoard(Board):
             
         assert len(all_mbeds) == 1
         mbed = all_mbeds[0]
-        try:
-            mbed.init()
-        except:
-            mbed.interface.close()
-            raise
+        if init_board:
+            try:
+                mbed.init()
+            except:
+                mbed.interface.close()
+                raise
         return mbed
 
     def getPacketCount(self):
