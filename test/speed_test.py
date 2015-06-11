@@ -18,6 +18,8 @@
 import os, sys
 from time import sleep, time
 from random import randrange
+import traceback
+import argparse
 
 parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, parentdir)
@@ -66,6 +68,7 @@ class SpeedTest(Test):
             print("Exception %s when testing board %s" % (e, board.getUniqueID()))
             result = SpeedTestResult()
             result.passed = False
+            traceback.print_exc(file=sys.stdout)
         result.board = board
         result.test = self
         return result
@@ -81,6 +84,11 @@ def speed_test(board_id):
             ram_size = 0x4000
             rom_start = 0x00000000
             rom_size = 0x20000
+        elif target_type == "kl28z":
+            ram_start = 0x1fffa000
+            ram_size = 96*1024
+            rom_start = 0x00000000
+            rom_size = 512*1024
         elif target_type == "kl46z":
             ram_start = 0x1fffe000
             ram_size = 0x8000
@@ -116,7 +124,7 @@ def speed_test(board_id):
             ram_size = 0x20000
             rom_start = 0x14000000
             rom_size = 0x100000
-        elif target_type == "nrf51822":
+        elif target_type == "nrf51":
             ram_start = 0x20000000
             ram_size = 0x4000
             rom_start = 0x00000000
@@ -229,5 +237,12 @@ def speed_test(board_id):
         return result
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
-    speed_test(None)
+    parser = argparse.ArgumentParser(description='pyOCD speed test')
+    parser.add_argument('-d', '--debug', action="store_true", help='Enable debug logging')
+    args = parser.parse_args()
+    level = logging.DEBUG if args.debug else logging.INFO
+    logging.basicConfig(level=level)
+    board = pyOCD.board.mbed_board.MbedBoard.getAllConnectedBoards(close = True)[0]
+    test = SpeedTest()
+    result = [test.run(board)]
+    test.print_perf_info(result)

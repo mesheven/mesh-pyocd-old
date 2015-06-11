@@ -19,13 +19,14 @@ import argparse, os, sys
 from time import sleep, time
 from random import randrange
 import math
+import argparse
 
 parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, parentdir)
 
 import pyOCD
 from pyOCD.board import MbedBoard
-from pyOCD.target.cortex_m import float2int
+from pyOCD.utility.conversion import float2int
 from pyOCD.transport import TransferError
 from test_util import Test, TestResult
 import logging
@@ -100,6 +101,10 @@ def cortex_test(board_id):
             addr = 0x20000000
             size = 0x502
             addr_flash = 0x10000
+        elif target_type == "kl28z":
+            addr = 0x20000000
+            size = 0x502
+            addr_flash = 0x10000
         elif target_type == "k64f":
             addr = 0x20000000
             size = 0x502
@@ -120,7 +125,7 @@ def cortex_test(board_id):
             addr = 0x10000000
             size = 0x502
             addr_flash = 0x2000
-        elif target_type == "nrf51822":
+        elif target_type == "nrf51":
             addr = 0x20000000
             size = 0x502
             addr_flash = 0x20000
@@ -222,16 +227,18 @@ def cortex_test(board_id):
         try:
             target.readBlockMemoryUnaligned8(addr_invalid, 0x1000)
             target.flush()
-            # If no exception is thrown the tests fails
-            memory_access_pass = False
+            # If no exception is thrown the tests fails except on nrf51 where invalid addresses read as 0
+            if target_type != "nrf51":
+                memory_access_pass = False
         except TransferError:
             pass
 
         try:
             target.readBlockMemoryUnaligned8(addr_invalid + 1, 0x1000)
             target.flush()
-            # If no exception is thrown the tests fails
-            memory_access_pass = False
+            # If no exception is thrown the tests fails except on nrf51 where invalid addresses read as 0
+            if target_type != "nrf51":
+                memory_access_pass = False
         except TransferError:
             pass
 
@@ -239,8 +246,9 @@ def cortex_test(board_id):
         try:
             target.writeBlockMemoryUnaligned8(addr_invalid, data)
             target.flush()
-            # If no exception is thrown the tests fails
-            memory_access_pass = False
+            # If no exception is thrown the tests fails except on nrf51 where invalid addresses read as 0
+            if target_type != "nrf51":
+                memory_access_pass = False
         except TransferError:
             pass
 
@@ -248,8 +256,9 @@ def cortex_test(board_id):
         try:
             target.writeBlockMemoryUnaligned8(addr_invalid + 1, data)
             target.flush()
-            # If no exception is thrown the tests fails
-            memory_access_pass = False
+            # If no exception is thrown the tests fails except on nrf51 where invalid addresses read as 0
+            if target_type != "nrf51":
+                memory_access_pass = False
         except TransferError:
             pass
 
@@ -284,5 +293,9 @@ def cortex_test(board_id):
         return result
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
+    parser = argparse.ArgumentParser(description='pyOCD cpu test')
+    parser.add_argument('-d', '--debug', action="store_true", help='Enable debug logging')
+    args = parser.parse_args()
+    level = logging.DEBUG if args.debug else logging.INFO
+    logging.basicConfig(level=level)
     cortex_test(None)
