@@ -15,8 +15,8 @@
  limitations under the License.
 """
 
-from cortex_m import CortexM, DHCSR, DBGKEY, C_DEBUGEN, C_MASKINTS, C_STEP, DEMCR, VC_CORERESET, NVIC_AIRCR, NVIC_AIRCR_VECTKEY, NVIC_AIRCR_SYSRESETREQ
-from pyOCD.target.target import TARGET_RUNNING, TARGET_HALTED
+from cortex_m import CortexM
+from .memory_map import (FlashRegion, RamRegion, MemoryMap)
 import logging
 
 DBGMCU_CR      = 0xE0042004
@@ -34,16 +34,13 @@ DBGMCU_APB2_VAL = 0x00070003
 
 class STM32F405(CortexM):
 
-    memoryMapXML =  """<?xml version="1.0"?>
-<!DOCTYPE memory-map PUBLIC "+//IDN gnu.org//DTD GDB Memory Map V1.0//EN" "http://sourceware.org/gdb/gdb-memory-map.dtd">
-<memory-map>
-    <memory type="flash" start="0x08000000" length="0x100000"> <property name="blocksize">0x4000</property></memory>
-    <memory type="ram" start="0x20000000" length="0x20000"> </memory>
-</memory-map>
-"""
+    memoryMap = MemoryMap(
+        FlashRegion(    start=0x08000000,  length=0x100000,      blocksize=0x4000, isBootMemory=True),
+        RamRegion(      start=0x20000000,  length=0x20000)
+        )
     
     def __init__(self, transport):
-        super(STM32F405, self).__init__(transport)
+        super(STM32F405, self).__init__(transport, self.memoryMap)
 
     def init(self):
     	logging.debug('stm32f405 init')
