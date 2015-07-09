@@ -34,13 +34,10 @@ DBGMCU_APB2_VAL = 0x00070003
 
 class STM32F405(CortexM):
 
-    memoryMapXML =  """<?xml version="1.0"?>
-<!DOCTYPE memory-map PUBLIC "+//IDN gnu.org//DTD GDB Memory Map V1.0//EN" "http://sourceware.org/gdb/gdb-memory-map.dtd">
-<memory-map>
-    <memory type="flash" start="0x08000000" length="0x100000"> <property name="blocksize">0x4000</property></memory>
-    <memory type="ram" start="0x20000000" length="0x20000"> </memory>
-</memory-map>
-"""
+    memoryMap = MemoryMap(
+        FlashRegion(    start=0x08000000,  length=0x100000,      blocksize=0x4000, isBootMemory=True),
+        RamRegion(      start=0x20000000,  length=0x20000)
+        )
     
     def __init__(self, transport):
         super(STM32F405, self).__init__(transport)
