@@ -104,6 +104,7 @@ AHB_IDR_TO_WRAP_SIZE = {
     0x04770031 : 0x400,     # Used on m0+? at least on KL25Z, KL46, LPC812
     0x04770021 : 0x400,     # Used on m0? used on nrf51, lpc11u24
     0x74770001 : 0x400,     # Used on m0+ on KL28Z
+    0x14770011 : 0x400,    # for STM32F103
     }
 
 # DHCSR bit masks
