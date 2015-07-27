@@ -14,12 +14,14 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
-from xml.etree.ElementTree import Element, SubElement, tostring
+from xml.etree.ElementTree import (Element, SubElement, tostring)
 
 from .target import Target
-from .target import TARGET_RUNNING, TARGET_HALTED, WATCHPOINT_READ, WATCHPOINT_WRITE, WATCHPOINT_READ_WRITE
-from ..transport.cmsis_dap import DP_REG, AP_REG
-from ..transport.transport import READ_START, READ_NOW, READ_END
+from .target import (TARGET_RUNNING, TARGET_HALTED,
+    BREAKPOINT_HW, BREAKPOINT_SW, BREAKPOINT_AUTO,
+    WATCHPOINT_READ, WATCHPOINT_WRITE, WATCHPOINT_READ_WRITE)
+from ..transport.cmsis_dap import (DP_REG, AP_REG)
+from ..transport.transport import (READ_START, READ_NOW, READ_END)
 from ..gdbserver import signals
 from ..utility import conversion
 import logging
@@ -226,9 +228,11 @@ CORE_REGISTER = {
 
 class Breakpoint(object):
     def __init__(self, comp_register_addr):
+        self.type = BREAKPOINT_HW
         self.comp_register_addr = comp_register_addr
         self.enabled = False
         self.addr = 0
+        self.original_instr = 0
 
 
 class Watchpoint():
@@ -331,10 +335,11 @@ class CortexM(Target):
         super(CortexM, self).__init__(transport, memoryMap)
 
         self.idcode = 0
-        self.breakpoints = []
+        self.hw_breakpoints = []
+        self.breakpoints = {}
         self.nb_code = 0
         self.nb_lit = 0
-        self.num_breakpoint_used = 0
+        self.num_hw_breakpoint_used = 0
         self.nb_lit = 0
         self.fpb_enabled = False
         self.watchpoints = []
@@ -451,11 +456,11 @@ class CortexM(Target):
         self.nb_lit = (fpcr >> 7) & 0xf
         logging.info("%d hardware breakpoints, %d literal comparators", self.nb_code, self.nb_lit)
         for i in range(self.nb_code):
-            self.breakpoints.append(Breakpoint(FP_COMP0 + 4*i))
+            self.hw_breakpoints.append(Breakpoint(FP_COMP0 + 4*i))
 
         # disable FPB (will be enabled on first bp set)
         self.disableFPB()
-        for bp in self.breakpoints:
+        for bp in self.hw_breakpoints:
             self.writeMemory(bp.comp_register_addr, 0)
 
     def setupDWT(self):
@@ -550,7 +555,7 @@ class CortexM(Target):
         # try to read 8bits data
         if (size > 0) and (addr & 0x01):
             mem = self.readMemory(addr, 8)
-            logging.debug("get 1 byte at %s: 0x%X", hex(addr), mem)
+#             logging.debug("get 1 byte at %s: 0x%X", hex(addr), mem)
             res.append(mem)
             size -= 1
             addr += 1
@@ -558,7 +563,7 @@ class CortexM(Target):
         # try to read 16bits data
         if (size > 1) and (addr & 0x02):
             mem = self.readMemory(addr, 16)
-            logging.debug("get 2 bytes at %s: 0x%X", hex(addr), mem)
+#             logging.debug("get 2 bytes at %s: 0x%X", hex(addr), mem)
             res.append(mem & 0xff)
             res.append((mem >> 8) & 0xff)
             size -= 2
@@ -574,7 +579,7 @@ class CortexM(Target):
 
         if (size > 1):
             mem = self.readMemory(addr, 16)
-            logging.debug("get 2 bytes at %s: 0x%X", hex(addr), mem)
+#             logging.debug("get 2 bytes at %s: 0x%X", hex(addr), mem)
             res.append(mem & 0xff)
             res.append((mem >> 8) & 0xff)
             size -= 2
@@ -582,7 +587,7 @@ class CortexM(Target):
 
         if (size > 0):
             mem = self.readMemory(addr, 8)
-            logging.debug("get 1 byte remaining at %s: 0x%X", hex(addr), mem)
+#             logging.debug("get 1 byte remaining at %s: 0x%X", hex(addr), mem)
             res.append(mem)
             size -= 1
             addr += 1
@@ -599,7 +604,7 @@ class CortexM(Target):
 
         #try to write 8 bits data
         if (size > 0) and (addr & 0x01):
-            logging.debug("write 1 byte at 0x%X: 0x%X", addr, data[idx])
+#             logging.debug("write 1 byte at 0x%X: 0x%X", addr, data[idx])
             self.writeMemory(addr, data[idx], 8)
             size -= 1
             addr += 1
@@ -607,7 +612,7 @@ class CortexM(Target):
 
         # try to write 16 bits data
         if (size > 1) and (addr & 0x02):
-            logging.debug("write 2 bytes at 0x%X: 0x%X", addr, data[idx] | (data[idx+1] << 8))
+#             logging.debug("write 2 bytes at 0x%X: 0x%X", addr, data[idx] | (data[idx+1] << 8))
             self.writeMemory(addr, data[idx] | (data[idx+1] << 8), 16)
             size -= 2
             addr += 2
@@ -624,7 +629,7 @@ class CortexM(Target):
 
         # try to write 16 bits data
         if (size > 1):
-            logging.debug("write 2 bytes at 0x%X: 0x%X", addr, data[idx] | (data[idx+1] << 8))
+#             logging.debug("write 2 bytes at 0x%X: 0x%X", addr, data[idx] | (data[idx+1] << 8))
             self.writeMemory(addr, data[idx] | (data[idx+1] << 8), 16)
             size -= 2
             addr += 2
@@ -632,7 +637,7 @@ class CortexM(Target):
 
         #try to write 8 bits data
         if (size > 0):
-            logging.debug("write 1 byte at 0x%X: 0x%X", addr, data[idx])
+#             logging.debug("write 1 byte at 0x%X: 0x%X", addr, data[idx])
             self.writeMemory(addr, data[idx], 8)
             size -= 1
             addr += 1
@@ -786,10 +791,7 @@ class CortexM(Target):
         return
 
     def findBreakpoint(self, addr):
-        for bp in self.breakpoints:
-            if bp.enabled and bp.addr == addr:
-                return bp
-        return None
+        return self.breakpoints.get(addr, None)
 
     def readCoreRegister(self, reg):
         """
@@ -945,7 +947,120 @@ class CortexM(Target):
             dhcsr_val = self.readMemory(DHCSR, mode=READ_END)
             assert dhcsr_val & S_REGRDY
 
-    def setBreakpoint(self, addr):
+    ## @brief Set a hardware or software breakpoint at a specific location in memory.
+    #
+    # @retval True Breakpoint was set.
+    # @retval False Breakpoint could not be set.
+    def setBreakpoint(self, addr, type=BREAKPOINT_AUTO):
+        logging.debug("set bkpt type %d at 0x%x", type, addr)
+
+        # Clear Thumb bit in case it is set.
+        addr = addr & ~1
+
+        # Check for an existing breakpoint at this address.
+        bp = self.findBreakpoint(addr)
+        if bp is not None:
+            return True
+
+        # Look up the memory region for the requested address. If there is no region,
+        # then we can't set a breakpoint.
+        region = self.memory_map.getRegionForAddress(addr)
+        if region is None:
+            return False
+
+        # Determine best type to use if auto.
+        if type == BREAKPOINT_AUTO:
+            # Use sw breaks for:
+            #  1. Addresses outside the supported FPBv1 range of 0-0x1fffffff
+            #  2. RAM regions by default.
+            #  3. No hw breaks are left.
+            #
+            # Otherwise use hw.
+            if (addr >= 0x20000000) or (region.isRam) or (self.availableBreakpoint() == 0):
+                type = BREAKPOINT_SW
+            else:
+                type = BREAKPOINT_HW
+
+            logging.debug("using type %d for auto bp", type)
+
+        # Revert to sw bp above 0x2000_0000.
+        if (type == BREAKPOINT_HW) and (addr >= 0x20000000):
+            logging.debug("using sw bp instead because of unsupported addr")
+            type = BREAKPOINT_SW
+
+        # Revert to hw bp if region is flash.
+        if region.isFlash:
+            logging.debug("using hw bp instead because addr is flash")
+            type = BREAKPOINT_HW
+
+        # Set the bp.
+        if type == BREAKPOINT_HW:
+            return self.setHardwareBreakpoint(addr)
+        elif type == BREAKPOINT_SW:
+            return self.setSoftwareBreakpoint(addr)
+        else:
+            raise RuntimeError("Unknown breakpoint type %d" % type)
+
+    ## @brief Remove a breakpoint at a specific location.
+    def removeBreakpoint(self, addr):
+        try:
+            logging.debug("remove bkpt at 0x%x", addr)
+
+            # Clear Thumb bit in case it is set.
+            addr = addr & ~1
+
+            # Get bp and remove from dict.
+            bp = self.breakpoints.pop(addr)
+
+            # Remove bp by type.
+            if bp.type == BREAKPOINT_SW:
+                self.removeSoftwareBreakpoint(bp)
+            elif bp.type == BREAKPOINT_HW:
+                self.removeHardwareBreakpoint(bp.addr)
+            else:
+                raise RuntimeError("Unknown breakpoint type %d" % bp.type)
+
+        except KeyError:
+            logging.debug("Tried to remove breakpoint 0x%08x that wasn't set" % addr)
+
+    def getBreakpointType(self, addr):
+        bp = self.findBreakpoint(addr)
+        return bp.type if (bp is not None) else None
+
+    def setSoftwareBreakpoint(self, addr):
+        assert self.memory_map.getRegionForAddress(addr).isRam
+        assert (addr & 1) == 0
+
+        try:
+            # Read original instruction.
+            instr = self.read16(addr)
+
+            # Insert BKPT #0 instruction.
+            self.write16(addr, 0xbe00)
+
+            # Create bp object.
+            bp = Breakpoint(0)
+            bp.type = BREAKPOINT_SW
+            bp.enabled = True
+            bp.addr = addr
+            bp.original_instr = instr
+
+            self.breakpoints[addr] = bp
+            return True
+        except TransferError:
+            logging.debug("Failed to set sw bp at 0x%x" % addr)
+            return False
+
+    def removeSoftwareBreakpoint(self, bp):
+        assert bp is not None and isinstance(bp, Breakpoint)
+
+        try:
+            # Restore original instruction.
+            self.write16(bp.addr, bp.original_instr)
+        except TransferError:
+            logging.debug("Failed to set sw bp at 0x%x" % addr)
+
+    def setHardwareBreakpoint(self, addr):
         """
         set a hardware breakpoint at a specific location in flash
         """
@@ -962,7 +1077,7 @@ class CortexM(Target):
             logging.error('No more available breakpoint!!, dropped bp at 0x%X', addr)
             return False
 
-        for bp in self.breakpoints:
+        for bp in self.hw_breakpoints:
             if not bp.enabled:
                 bp.enabled = True
                 bp_match = (1 << 30)
@@ -970,12 +1085,13 @@ class CortexM(Target):
                     bp_match = (2 << 30)
                 self.writeMemory(bp.comp_register_addr, addr & 0x1ffffffc | bp_match | 1)
                 bp.addr = addr
-                self.num_breakpoint_used += 1
+                self.num_hw_breakpoint_used += 1
+                self.breakpoints[addr] = bp
                 return True
         return False
 
     def availableBreakpoint(self):
-        return len(self.breakpoints) - self.num_breakpoint_used
+        return len(self.hw_breakpoints) - self.num_hw_breakpoint_used
 
     def enableFPB(self):
         self.writeMemory(FP_CTRL, FP_CTRL_KEY | 1)
@@ -989,16 +1105,16 @@ class CortexM(Target):
         logging.debug('fpb has been disabled')
         return
 
-    def removeBreakpoint(self, addr):
+    def removeHardwareBreakpoint(self, addr):
         """
         remove a hardware breakpoint at a specific location in flash
         """
-        for bp in self.breakpoints:
+        for bp in self.hw_breakpoints:
             if bp.enabled and bp.addr == addr:
                 bp.enabled = False
                 self.writeMemory(bp.comp_register_addr, 0)
                 bp.addr = addr
-                self.num_breakpoint_used -= 1
+                self.num_hw_breakpoint_used -= 1
                 return
         return
 
