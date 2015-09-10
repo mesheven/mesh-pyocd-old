@@ -15,9 +15,8 @@
  limitations under the License.
 """
 
-from cortex_m import CortexM, DHCSR, DBGKEY, C_DEBUGEN, C_MASKINTS, C_STEP, DEMCR, VC_CORERESET, NVIC_AIRCR, NVIC_AIRCR_VECTKEY, NVIC_AIRCR_SYSRESETREQ
+from cortex_m import CortexM
 from .memory_map import (FlashRegion, RamRegion, MemoryMap)
-from pyOCD.target.target import TARGET_RUNNING, TARGET_HALTED
 import logging
 
 DBGMCU_CR = 0xE0042004
@@ -35,7 +34,7 @@ class STM32F103RC(CortexM):
         super(STM32F103RC, self).__init__(transport, self.memoryMap)
 
     def init(self):
-    	logging.debug('stm32f103rc init')
+        logging.debug('stm32f103rc init')
         CortexM.init(self)
         self.writeMemory(DBGMCU_CR, DBGMCU_VAL);
 
