@@ -31,12 +31,14 @@ import target_lpc11u24
 import target_lpc1768
 import target_lpc4330
 import target_nrf51
+import target_nrf52
 import target_stm32f103rc
 import target_stm32f051
 import target_maxwsnenv
 import target_max32600mbed
 import target_stm32f405
 import target_w7500
+import target_lpc11xx_32
 import semihost
 
 TARGET = {
@@ -56,10 +58,12 @@ TARGET = {
           'lpc1768': target_lpc1768.LPC1768,
           'lpc4330': target_lpc4330.LPC4330,
           'nrf51': target_nrf51.NRF51,
+          'nrf52' : target_nrf52.NRF52,
           'stm32f103rc': target_stm32f103rc.STM32F103RC,
           'stm32f051': target_stm32f051.STM32F051,
           'maxwsnenv': target_maxwsnenv.MAXWSNENV,
           'max32600mbed': target_max32600mbed.MAX32600MBED,
           'stm32f405': target_stm32f405.STM32F405,
           'w7500': target_w7500.W7500,          
+	'lpc11xx_32': target_lpc11xx_32.LPC11XX_32,
          }

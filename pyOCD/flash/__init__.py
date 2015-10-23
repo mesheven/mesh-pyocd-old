@@ -26,12 +26,14 @@ from flash_lpc11u24 import Flash_lpc11u24
 from flash_lpc1768 import Flash_lpc1768
 from flash_lpc4330 import Flash_lpc4330
 from flash_nrf51 import Flash_nrf51
+from flash_nrf52 import Flash_nrf52
 from flash_stm32f103rc import Flash_stm32f103rc
 from flash_stm32f051 import Flash_stm32f051
 from flash_maxwsnenv import Flash_maxwsnenv
 from flash_max32600mbed import Flash_max32600mbed
 from flash_stm32f405 import Flash_stm32f405
 from flash_w7500 import Flash_w7500
+from flash_lpc11xx_32 import Flash_lpc11xx_32
 
 FLASH = {
          'cortex_m': Flash_cortex_m,
@@ -50,10 +52,12 @@ FLASH = {
          'lpc1768':  Flash_lpc1768,
          'lpc4330':  Flash_lpc4330,
          'nrf51': Flash_nrf51,
+         'nrf52': Flash_nrf52,
          'stm32f103rc': Flash_stm32f103rc,
          'stm32f051': Flash_stm32f051,
          'maxwsnenv': Flash_maxwsnenv,
          'max32600mbed': Flash_max32600mbed,
          'stm32f405': Flash_stm32f405,
          'w7500' : Flash_w7500,
+         'lpc11xx_32': Flash_lpc11xx_32,
          }
