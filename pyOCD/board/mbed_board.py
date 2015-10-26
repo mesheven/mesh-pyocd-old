@@ -115,7 +115,7 @@ class MbedBoard(Board):
         """
         Return board name
         """
-        return self.board_name
+        return self.name
 
     def getInfo(self):
         """
