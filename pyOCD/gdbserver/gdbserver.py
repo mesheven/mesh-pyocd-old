@@ -16,7 +16,7 @@
 """
 
 from ..target.target import Target
-from ..transport.transport import Transport
+from pyOCD.pyDAPAccess import DAPAccess
 from ..utility.conversion import hexToByteList, hexEncode, hexDecode
 from gdb_socket import GDBSocket
 from gdb_websocket import GDBWebSocket
@@ -235,6 +235,7 @@ class GDBServer(threading.Thread):
         self.telnet_port = options.get('telnet_port', 4444)
         self.semihost_use_syscalls = options.get('semihost_use_syscalls', False)
         self.server_listening_callback = options.get('server_listening_callback', None)
+        self.serve_local_only = options.get('serve_local_only', True)
         self.packet_size = 2048
         self.packet_io = None
         self.gdb_features = []
@@ -246,6 +247,8 @@ class GDBServer(threading.Thread):
         self.detach_event = threading.Event()
         if self.wss_server == None:
             self.abstract_socket = GDBSocket(self.port, self.packet_size)
+            if self.serve_local_only:
+                self.abstract_socket.host = 'localhost'
         else:
             self.abstract_socket = GDBWebSocket(self.wss_server)
 
@@ -255,7 +258,7 @@ class GDBServer(threading.Thread):
         else:
             # Use internal IO handler.
             semihost_io_handler = semihost.InternalSemihostIOHandler()
-        self.telnet_console = semihost.TelnetSemihostIOHandler(self.telnet_port)
+        self.telnet_console = semihost.TelnetSemihostIOHandler(self.telnet_port, self.serve_local_only)
         self.semihost = semihost.SemihostAgent(self.target, io_handler=semihost_io_handler, console=self.telnet_console)
 
         self.setDaemon(True)
@@ -786,7 +789,7 @@ class GDBServer(threading.Thread):
                     val += hex(x)[2:4]
                 else:
                     val += '0' + hex(x)[2:3]
-        except Transport.TransferError:
+        except DAPAccess.TransferError:
             logging.debug("getMemory failed at 0x%x" % addr)
             val = 'E01' #EPERM
         return self.createRSPPacket(val)
@@ -810,7 +813,7 @@ class GDBServer(threading.Thread):
                 # Flush so an exception is thrown now if invalid memory was accessed
                 self.target.flush()
             resp = "OK"
-        except Transport.TransferError:
+        except DAPAccess.TransferError:
             logging.debug("writeMemory failed at 0x%x" % addr)
             resp = 'E01' #EPERM
 
@@ -840,7 +843,7 @@ class GDBServer(threading.Thread):
                 # Flush so an exception is thrown now if invalid memory was accessed
                 self.target.flush()
             resp = "OK"
-        except Transport.TransferError:
+        except DAPAccess.TransferError:
             logging.debug("writeMemory failed at 0x%x" % addr)
             resp = 'E01' #EPERM
 

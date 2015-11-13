@@ -19,28 +19,38 @@ from cortex_m import CortexM
 from .memory_map import (FlashRegion, RamRegion, MemoryMap)
 import logging
 
-# NRF51 specific registers
-RESET = 0x40000544
-RESET_ENABLE = (1 << 0)
+#DBGMCU clock
+RCC_APB2ENR_CR = 0x40021018
+RCC_APB2ENR_DBGMCU = 0x00400000
 
-class NRF51(CortexM):
+DBGMCU_CR = 0x40015804
+DBGMCU_APB1_CR = 0x40015808
+DBGMCU_APB2_CR = 0x4001580C
+
+
+#0000 0010 0010 0000 0001 1101 0011 0011
+DBGMCU_APB1_VAL = 0x02201D33
+
+#0000 0000 0000 0111 0000 1000 0000 0000
+DBGMCU_APB2_VAL = 0x00070800
+
+
+
+class STM32F071(CortexM):
 
     memoryMap = MemoryMap(
-        FlashRegion(    start=0,           length=0x40000,      blocksize=0x400, isBootMemory=True),
+        FlashRegion(    start=0x08000000,  length=0x20000,      blocksize=0x800, isBootMemory=True),
         RamRegion(      start=0x20000000,  length=0x4000)
         )
 
     def __init__(self, link):
-        super(NRF51, self).__init__(link, self.memoryMap)
+        super(STM32F071, self).__init__(link, self.memoryMap)
 
-    def resetn(self):
-        """
-        reset a core. After a call to this function, the core
-        is running
-        """
-        #Regular reset will kick NRF out of DBG mode
-        logging.debug("target_nrf51.reset: enable reset pin")
-        self.writeMemory(RESET, RESET_ENABLE)
-        #reset
-        logging.debug("target_nrf51.reset: trigger nRST pin")
-        CortexM.reset(self)
+    def init(self):
+        logging.debug('stm32f071 init')
+        CortexM.init(self)
+        enclock = self.readMemory(RCC_APB2ENR_CR)
+        enclock |= RCC_APB2ENR_DBGMCU
+        self.writeMemory(RCC_APB2ENR_CR, enclock);
+        self.writeMemory(DBGMCU_APB1_CR, DBGMCU_APB1_VAL);
+        self.writeMemory(DBGMCU_APB2_CR, DBGMCU_APB2_VAL);

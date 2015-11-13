@@ -27,7 +27,7 @@ import traceback
 import pyOCD
 from ..gdbserver.gdb_socket import GDBSocket
 from ..gdbserver.gdb_websocket import GDBWebSocket
-from ..transport.transport import Transport
+from pyOCD.pyDAPAccess import DAPAccess
 
 # Debug logging options
 LOG_SEMIHOST = True
@@ -293,7 +293,7 @@ class InternalSemihostIOHandler(SemihostIOHandler):
 # The server thread will automatically be started by the constructor. To shut down the
 # server and its thread, call the stop() method.
 class TelnetSemihostIOHandler(SemihostIOHandler):
-    def __init__(self, port_or_url):
+    def __init__(self, port_or_url, serve_local_only=True):
         super(TelnetSemihostIOHandler, self).__init__()
         self._abstract_socket = None
         self._wss_server = None
@@ -304,6 +304,8 @@ class TelnetSemihostIOHandler(SemihostIOHandler):
         else:
             self._port = port_or_url
             self._abstract_socket = GDBSocket(self._port, 4096)
+            if serve_local_only:
+                self._abstract_socket.host = 'localhost'
         self._buffer = bytearray()
         self._buffer_lock = threading.Lock()
         self.connected = None
@@ -580,7 +582,7 @@ class SemihostAgent(object):
                 # and then exit the loop.
                 target_str += str(bytearray(data[:terminator]))
                 break
-            except Transport.TransferError:
+            except DAPAccess.TransferError:
                 # Failed to read some or all of the string.
                 break
             except ValueError:
