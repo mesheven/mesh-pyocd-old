@@ -52,14 +52,11 @@ BOARD_ID_TO_INFO = {
                 "1100": BoardInfo(  "nRF51-DK",             "nrf51",            "l1_nrf51-dk.bin",      ),
                 "2201": BoardInfo(  "WIZwik_W7500",         "w7500",            "l1_w7500mbed.bin",     ),
                 "9900": BoardInfo(  "Microbit",             "nrf51",            "l1_microbit.bin",      ),
-                "1070": BoardInfo(  "nRF51822-mKIT",        "nrf51",            "l1_nrf51822.bin",      ),
-                "1071": BoardInfo(  "BB2000",               "nrf51",            "l1_nrf51822.bin",      ),
-                "1080": BoardInfo(  "DT01 + MB2001",        "stm32f103rc",      "l1_stm32f103rc.bin",   ),
-                "1081": BoardInfo(  "BB2001",               "stm32f103rc",      "l1_stm32f103rc.bin",   ),                
-                "1090": BoardInfo(  "DT01 + MB00xx",        "stm32f051",        "l1_stm32f051.bin",     ),
-                "2000": BoardInfo(  "DT01 + MB3002",        "stm32f405",        "l1_stm32f405.bin",     ),
-                "2001": BoardInfo(  "BB2002/BB3002",        "stm32f405",        "l1_stm32f405.bin",     ),
-                "2010": BoardInfo(  "DT01 + MB00yy",        "stm32f072",        "l1_stm32f072.bin",     ),
+                "1070": BoardInfo(  "MB2000",               "nrf51",            "l1_nrf51822.bin",      ),
+                "1080": BoardInfo(  "MB2001/MB3001",        "stm32f103rc",      "l1_stm32f103rc.bin",   ),
+                "1090": BoardInfo(  "MB00XX",               "stm32f051",        "l1_stm32f051.bin",     ),
+                "2000": BoardInfo(  "MB2002/MB3002",        "stm32f405",        "l1_stm32f405.bin",     ),
+                "2010": BoardInfo(  "MB00YY",               "stm32f072",        "l1_stm32f072.bin",     ),
               }
 
 mbed_vid = 0x0d28
