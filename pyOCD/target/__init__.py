@@ -34,7 +34,7 @@ import target_nrf51
 import target_nrf52
 import target_stm32f103rc
 import target_stm32f051
-import target_stm32f071
+import target_stm32f072
 import target_maxwsnenv
 import target_max32600mbed
 import target_stm32f405
@@ -67,5 +67,5 @@ TARGET = {
           'stm32f405': target_stm32f405.STM32F405,
           'w7500': target_w7500.W7500,          
           'lpc11xx_32': target_lpc11xx_32.LPC11XX_32,
-          'stm32f071': target_stm32f071.STM32F071,
+          'stm32f072': target_stm32f072.STM32F072,
          }

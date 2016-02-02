@@ -36,7 +36,7 @@ DBGMCU_APB2_VAL = 0x00070800
 
 
 
-class STM32F071(CortexM):
+class STM32F072(CortexM):
 
     memoryMap = MemoryMap(
         FlashRegion(    start=0x08000000,  length=0x20000,      blocksize=0x800, isBootMemory=True),
@@ -44,10 +44,10 @@ class STM32F071(CortexM):
         )
 
     def __init__(self, link):
-        super(STM32F071, self).__init__(link, self.memoryMap)
+        super(STM32F072, self).__init__(link, self.memoryMap)
 
     def init(self):
-        logging.debug('stm32f071 init')
+        logging.debug('stm32f072 init')
         CortexM.init(self)
         enclock = self.readMemory(RCC_APB2ENR_CR)
         enclock |= RCC_APB2ENR_DBGMCU
