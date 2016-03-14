@@ -385,7 +385,7 @@ class CortexM(Target):
                 # A size smaller than the supported size will decrease performance
                 # due to the extra address writes, but will not create any
                 # read/write errors.
-                auto_increment_page_size = 0x400
+                self.auto_increment_page_size = 0x400
                 logging.warning("Unknown AHB IDR: 0x%x" % ahb_idr)
 
         if bus_accessible:
@@ -1323,5 +1323,3 @@ class CortexM(Target):
         t = SubElement(root, 'thread', id="1", core="0")
         t.text = "Thread mode"
         return '<?xml version="1.0"?><!DOCTYPE feature SYSTEM "threads.dtd">' + tostring(root)
-
-
