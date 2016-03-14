@@ -35,6 +35,7 @@ from flash_stm32f405 import Flash_stm32f405
 from flash_w7500 import Flash_w7500
 from flash_lpc11xx_32 import Flash_lpc11xx_32
 from flash_stm32f072 import Flash_stm32f072
+from flash_lpc824 import Flash_lpc824
 
 FLASH = {
          'cortex_m': Flash_cortex_m,
@@ -62,4 +63,5 @@ FLASH = {
          'w7500' : Flash_w7500,
          'lpc11xx_32': Flash_lpc11xx_32,
          'stm32f072': Flash_stm32f072,
+	'lpc824': Flash_lpc824,
          }
