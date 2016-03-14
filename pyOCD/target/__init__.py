@@ -69,5 +69,5 @@ TARGET = {
           'w7500': target_w7500.W7500,          
           'lpc11xx_32': target_lpc11xx_32.LPC11XX_32,
           'lpc824': target_lpc824.LPC824,
-	'stm32f072': target_stm32f072.STM32F072,
+	     'stm32f072': target_stm32f072.STM32F072,
          }
