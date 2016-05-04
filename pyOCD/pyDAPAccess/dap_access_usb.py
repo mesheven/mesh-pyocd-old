@@ -42,7 +42,12 @@ def _get_interfaces():
 
 def _get_unique_id(interface):
     """Get the unique id from an interface"""
-    return interface.getSerialNumber()
+    interface.write([0x80])
+    raw_id = bytearray(interface.read())
+    id_start = 2
+    id_size = raw_id[1]
+    unique_id = str(raw_id[id_start:id_start + id_size])
+    return unique_id
 
 
 class _Transfer(object):
