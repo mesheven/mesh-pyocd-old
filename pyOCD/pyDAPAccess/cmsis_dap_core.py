@@ -39,6 +39,7 @@ COMMAND_ID = {'DAP_INFO': 0x00,
               'DAP_JTAG_CONFIGURE': 0x15,
               'DAP_JTAG_IDCODE': 0x16,
               'DAP_VENDOR0': 0x80,
+              'DAP_VENDOR1': 0x81,  #get cpu type
               }
 
 ID_INFO = {'VENDOR_ID': 0x01,
