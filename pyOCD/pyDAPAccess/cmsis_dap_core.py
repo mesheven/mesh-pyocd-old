@@ -40,6 +40,7 @@ COMMAND_ID = {'DAP_INFO': 0x00,
               'DAP_JTAG_IDCODE': 0x16,
               'DAP_VENDOR0': 0x80,
               'DAP_VENDOR1': 0x81,  #get cpu type
+              'DAP_VENDOR_IDENTIFY': 0x9F
               }
 
 ID_INFO = {'VENDOR_ID': 0x01,
@@ -356,5 +357,17 @@ class CMSIS_DAP_Protocol(object):
         resp = self.interface.read()
 
         if resp[0] != COMMAND_ID['DAP_VENDOR0'] + index:
+            # Response is to a different command
+            raise DAPAccessIntf.DeviceError()
+
+    def identification(self, on):
+        cmd = []
+        cmd.append(COMMAND_ID['DAP_VENDOR_IDENTIFY'])
+        cmd.append(on)
+        self.interface.write(cmd)
+
+        resp = self.interface.read()
+
+        if resp[0] != COMMAND_ID['DAP_VENDOR_IDENTIFY']:
             # Response is to a different command
             raise DAPAccessIntf.DeviceError()

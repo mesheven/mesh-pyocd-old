@@ -430,6 +430,14 @@ class DAPAccessUSB(DAPAccessIntf):
     def get_cpu_type(self):
         return self._cpu_type
 
+    def identification(self, state):
+        if (state):
+            state = 1
+        else:
+            state = 0
+        self._protocol.identification(state)
+        return state
+
     def reset(self):
         self.flush()
         self._protocol.setSWJPins(0, 'nRESET')
