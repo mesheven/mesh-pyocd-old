@@ -44,9 +44,15 @@ def _get_unique_id(interface):
     """Get the unique id from an interface"""
     return interface.getSerialNumber()
 
+def _get_full_unique_id(interface):
+    """Get the full unique id from an interface"""
+    interface.write([0x82])
+    raw_data = bytearray(interface.read())
+    fullUniqueId = list(raw_data[2:18])
+    return fullUniqueId
 
 def _get_cpu_type(interface):
-    """Get the unique id from an interface"""
+    """Get the cpu type from an interface"""
     interface.write([0x81])
     raw_data = bytearray(interface.read())
     cpu_type = raw_data[1]
@@ -356,8 +362,10 @@ class DAPAccessUSB(DAPAccessIntf):
             try:
                 unique_id = _get_unique_id(interface)
                 cpu_type  = _get_cpu_type(interface)
+                full_unique_id = _get_full_unique_id(interface)
                 new_daplink = DAPAccessUSB(unique_id)
                 new_daplink._cpu_type = cpu_type
+                new_daplink._full_unique_id = full_unique_id
                 all_daplinks.append(new_daplink)
             except DAPAccessIntf.TransferError:
                 logger = logging.getLogger(__name__)
@@ -429,6 +437,9 @@ class DAPAccessUSB(DAPAccessIntf):
 
     def get_cpu_type(self):
         return self._cpu_type
+
+    def get_full_unique_id(self):
+        return self._full_unique_id
 
     def identification(self, state):
         if (state):
