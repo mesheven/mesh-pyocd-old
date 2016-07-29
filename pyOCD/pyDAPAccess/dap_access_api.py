@@ -149,8 +149,8 @@ class DAPAccessIntf(object):
         """Send a vendor specific command"""
         raise NotImplementedError()
 
-    def identification(self, on):
-        """Send a vendor specific command to enable/disable identify mode"""
+    def identification(self, time = 3000):
+        """Send a vendor specific command to identify mode"""
         raise NotImplementedError()
 
     # ------------------------------------------- #

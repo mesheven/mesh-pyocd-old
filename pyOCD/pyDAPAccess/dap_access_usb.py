@@ -441,13 +441,8 @@ class DAPAccessUSB(DAPAccessIntf):
     def get_full_unique_id(self):
         return self._full_unique_id
 
-    def identification(self, state):
-        if (state):
-            state = 1
-        else:
-            state = 0
-        self._protocol.identification(state)
-        return state
+    def identification(self, time = 3000):
+        return self._protocol.identification(time)
 
     def reset(self):
         self.flush()
