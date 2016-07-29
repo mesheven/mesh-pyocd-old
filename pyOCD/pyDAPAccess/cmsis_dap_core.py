@@ -367,7 +367,6 @@ class CMSIS_DAP_Protocol(object):
         cmd.append(time & 0xff)
         cmd.append((time >> 8) & 0xff)
 
-        print "VENDOR:", time, cmd
         self.interface.write(cmd)
 
         resp = self.interface.read()
