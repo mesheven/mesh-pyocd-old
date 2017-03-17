@@ -361,10 +361,12 @@ class CMSIS_DAP_Protocol(object):
             # Response is to a different command
             raise DAPAccessIntf.DeviceError()
 
-    def identification(self, on):
+    def identification(self, time = 3000):
         cmd = []
         cmd.append(COMMAND_ID['DAP_VENDOR_IDENTIFY'])
-        cmd.append(on)
+        cmd.append(time & 0xff)
+        cmd.append((time >> 8) & 0xff)
+
         self.interface.write(cmd)
 
         resp = self.interface.read()

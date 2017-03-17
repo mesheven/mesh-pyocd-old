@@ -63,11 +63,13 @@ BOARD_ID_TO_INFO = {
                 "1234": BoardInfo(  "u-blox-C027",          "lpc1768",          "l1_lpc1768.bin",       ),
                 "1018": BoardInfo(  "Switch-Science-mbed-LPC824", "lpc824",     "l1_lpc824.bin",        ),
                 "0824": BoardInfo(  "LPCXpresso824-MAX",    "lpc824",           "l1_lpc824.bin",        ),
-                "1070": BoardInfo(  "MB2000",               "nrf51",            "l1_nrf51822.bin",      ),
-                "1080": BoardInfo(  "MB2001/MB3001",        "stm32f103rc",      "l1_stm32f103rc.bin",   ),
-                "1090": BoardInfo(  "MB00XX",               "stm32f051",        "l1_stm32f051.bin",     ),
+                "2000": BoardInfo(  "MB2000",               "nrf51",            "l1_nrf51822.bin",      ),
+                "2000": BoardInfo(  "MB2001/MB3001",        "stm32f103rc",      "l1_stm32f103rc.bin",   ),
+                "2000": BoardInfo(  "MB00XX",               "stm32f051",        "l1_stm32f051.bin",     ),
                 "2000": BoardInfo(  "MB2002/MB3002",        "stm32f405",        "l1_stm32f405.bin",     ),
-                "2010": BoardInfo(  "MB00YY",               "stm32f072",        "l1_stm32f072.bin",     ),
+                "2000": BoardInfo(  "MB00YY",               "stm32f072",        "l1_stm32f072.bin",     ),
+                "2000": BoardInfo(  "MB00UU",               "stm32f031",        "l1_stm32f031.bin",     ),
+
               }
 
 mbed_vid = 0x0d28
