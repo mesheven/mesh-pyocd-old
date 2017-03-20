@@ -361,10 +361,8 @@ class DAPAccessUSB(DAPAccessIntf):
         for interface in all_interfaces:
             try:
                 unique_id = _get_unique_id(interface)
-                cpu_type  = _get_cpu_type(interface)
                 full_unique_id = _get_full_unique_id(interface)
                 new_daplink = DAPAccessUSB(unique_id)
-                new_daplink._cpu_type = cpu_type
                 new_daplink._full_unique_id = full_unique_id
                 all_daplinks.append(new_daplink)
             except DAPAccessIntf.TransferError:
@@ -436,6 +434,11 @@ class DAPAccessUSB(DAPAccessIntf):
         return self._unique_id
 
     def get_cpu_type(self):
+        return self._cpu_type
+
+    def get_real_time_cpu_type(self):
+        cpu_type  = _get_cpu_type(self._interface)
+        self._cpu_type =  cpu_type
         return self._cpu_type
 
     def get_full_unique_id(self):
