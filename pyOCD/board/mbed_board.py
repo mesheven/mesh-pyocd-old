@@ -101,7 +101,7 @@ class MbedBoard(Board):
             target = self.native_target
 
         if target is None:
-            logging.error("Unsupported board found %s", board_id)
+            #logging.error("Unsupported board found %s", board_id)
             target = "cortex_m"
 
         super(MbedBoard, self).__init__(target, target, link, frequency)
