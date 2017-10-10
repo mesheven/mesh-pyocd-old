@@ -69,7 +69,7 @@ BOARD_ID_TO_INFO = {
                 "2000": BoardInfo(  "MB2002/MB3002",        "stm32f405",        "l1_stm32f405.bin",     ),
                 "2000": BoardInfo(  "MB00YY",               "stm32f072",        "l1_stm32f072.bin",     ),
                 "2000": BoardInfo(  "MB00UU",               "stm32f031",        "l1_stm32f031.bin",     ),
-
+                "2000": BoardInfo(  "MB00ZZ",               "stm32l486",        "l1_stm32l486.bin",     ),
               }
 
 mbed_vid = 0x0d28
