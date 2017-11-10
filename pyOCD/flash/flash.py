@@ -94,6 +94,7 @@ class Flash(object):
                 self.page_buffers = [self.begin_data]
 
             self.double_buffer_supported = len(self.page_buffers) > 1
+            self.page_buffer_size = [0] * len(self.page_buffers)
 
         else:
             self.end_flash_algo = None
@@ -180,9 +181,10 @@ class Flash(object):
 
         # get info about this page
         page_info = self.getPageInfo(flashPtr)
+        size = min(len(bytes), page_info.size)
 
         # update core register to execute the program_page subroutine
-        result = self.callFunctionAndWait(self.flash_algo['pc_program_page'], flashPtr, page_info.size, self.begin_data)
+        result = self.callFunctionAndWait(self.flash_algo['pc_program_page'], flashPtr, size, self.begin_data)
 
         # check the return code
         if result != 0:
@@ -202,9 +204,10 @@ class Flash(object):
 
         # get info about this page
         page_info = self.getPageInfo(flashPtr)
+        size = min(self.page_buffer_size[bufferNumber], page_info.size)
 
         # update core register to execute the program_page subroutine
-        result = self.callFunction(self.flash_algo['pc_program_page'], flashPtr, page_info.size, self.page_buffers[bufferNumber])
+        result = self.callFunction(self.flash_algo['pc_program_page'], flashPtr, size, self.page_buffers[bufferNumber])
 
     def loadPageBuffer(self, bufferNumber, flashPtr, bytes):
         assert bufferNumber < len(self.page_buffers), "Invalid buffer number"
@@ -212,8 +215,11 @@ class Flash(object):
         # prevent security settings from locking the device
         bytes = self.overrideSecurityBits(flashPtr, bytes)
 
+        # store real flash size
+        self.page_buffer_size[bufferNumber] = len(bytes)
+
         # transfer the buffer to device RAM
-        self.target.writeBlockMemoryUnaligned8(self.page_buffers[bufferNumber], bytes)
+        self.target.writeBlockMemoryUnaligned8(self.page_buffers[bufferNumber], bytes)       
 
     def programPhrase(self, flashPtr, bytes):
         """
