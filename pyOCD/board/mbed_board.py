@@ -63,13 +63,14 @@ BOARD_ID_TO_INFO = {
                 "1234": BoardInfo(  "u-blox-C027",          "lpc1768",          "l1_lpc1768.bin",       ),
                 "1018": BoardInfo(  "Switch-Science-mbed-LPC824", "lpc824",     "l1_lpc824.bin",        ),
                 "0824": BoardInfo(  "LPCXpresso824-MAX",    "lpc824",           "l1_lpc824.bin",        ),
-                "2000": BoardInfo(  "MB2000",               "nrf51",            "l1_nrf51822.bin",      ),
-                "2000": BoardInfo(  "MB2001/MB3001",        "stm32f103rc",      "l1_stm32f103rc.bin",   ),
+                "1070": BoardInfo(  "MB2000",               "nrf51",            "l1_nrf51822.bin",      ),
+                "1080": BoardInfo(  "MB2000",               "nrf52",            "l1_nrf52832.bin",      ),
+                "1090": BoardInfo(  "MB2001/MB3001",        "stm32f103rc",      "l1_stm32f103rc.bin",   ),
                 "2000": BoardInfo(  "MB00XX",               "stm32f051",        "l1_stm32f051.bin",     ),
-                "2000": BoardInfo(  "MB2002/MB3002",        "stm32f405",        "l1_stm32f405.bin",     ),
-                "2000": BoardInfo(  "MB00YY",               "stm32f072",        "l1_stm32f072.bin",     ),
-                "2000": BoardInfo(  "MB00UU",               "stm32f031",        "l1_stm32f031.bin",     ),
-                "2000": BoardInfo(  "MB00ZZ",               "stm32l486",        "l1_stm32l486.bin",     ),
+                "2010": BoardInfo(  "MB2002/MB3002/MB4001",        "stm32f405",        "l1_stm32f405.bin",     ),
+                "2020": BoardInfo(  "MB00YY",               "stm32f072",        "l1_stm32f072.bin",     ),
+                "2030": BoardInfo(  "MB00TT",               "stm32f031",        "l1_stm32f031.bin",     ),
+                "2040": BoardInfo(  "MB2001/MB3001/MB4001",               "stm32l486",        "l1_stm32l486.bin",     ),
               }
 
 mbed_vid = 0x0d28
@@ -88,7 +89,24 @@ class MbedBoard(Board):
         self.native_target = None
         self.test_binary = None
         unique_id = link.get_unique_id()
-        board_id = unique_id[0:4]
+        #Some work around for register tool. Have to detect the right CPU type before this and pass it into this function
+        #board_id = unique_id[0:4]
+        if target == "nrf51":
+            board_id = "1070"
+        elif  target == "nrf52":
+            board_id = "1080"
+        elif target == "stm32f103rc":
+            board_id = "1090"
+        elif target == "stm32f051":
+            board_id = "2000"
+        elif target == "stm32f405":
+            board_id = "2010"
+        elif target == "stm32f072":
+            board_id = "2020"
+        elif target == "stm32f031":
+            board_id = "2030"
+        elif target == "stm32l486":
+            board_id = "2040"
         self.name = "Unknown Board"
         if board_id in BOARD_ID_TO_INFO:
             board_info = BOARD_ID_TO_INFO[board_id]
