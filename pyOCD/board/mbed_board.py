@@ -88,24 +88,27 @@ class MbedBoard(Board):
         """
         self.native_target = None
         self.test_binary = None
+        link.open()
+        cpuTypeNum = link.get_real_time_cpu_type()
+        link.close()
         unique_id = link.get_unique_id()
         #Some work around for register tool. Have to detect the right CPU type before this and pass it into this function
         #board_id = unique_id[0:4]
-        if target == "nrf51":
+        if cpuTypeNum == 0:
             board_id = "1070"
-        elif  target == "nrf52":
+        elif  cpuTypeNum == 7:
             board_id = "1080"
-        elif target == "stm32f103rc":
+        elif cpuTypeNum == 2:
             board_id = "1090"
-        elif target == "stm32f051":
+        elif cpuTypeNum == 1:
             board_id = "2000"
-        elif target == "stm32f405":
+        elif cpuTypeNum == 3:
             board_id = "2010"
-        elif target == "stm32f072":
+        elif cpuTypeNum == 4:
             board_id = "2020"
-        elif target == "stm32f031":
+        elif cpuTypeNum == 5:
             board_id = "2030"
-        elif target == "stm32l486":
+        elif cpuTypeNum == 6:
             board_id = "2040"
         self.name = "Unknown Board"
         if board_id in BOARD_ID_TO_INFO:
