@@ -429,6 +429,7 @@ class DAPAccessUSB(DAPAccessIntf):
         assert self._interface is not None
         self.flush()
         self._interface.close()
+        self._interface = None
 
     def get_unique_id(self):
         return self._unique_id
