@@ -99,7 +99,7 @@ dependencies for the current platform by doing the following:
     $ pip install -r dev-requirements.txt
 
 On Windows, the virtualenv would be activated by executing
-``env\Scripts\activate``.
+"env\Scripts\activate".
 
 To run the unittests, you can execute the following.  Because of how
 nose searches for tests, specifying the directory is important as it
