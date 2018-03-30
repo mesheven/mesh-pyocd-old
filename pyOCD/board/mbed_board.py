@@ -71,6 +71,7 @@ BOARD_ID_TO_INFO = {
                 "2020": BoardInfo(  "MB00YY",               "stm32f072",        "l1_stm32f072.bin",     ),
                 "2030": BoardInfo(  "MB00TT",               "stm32f031",        "l1_stm32f031.bin",     ),
                 "2040": BoardInfo(  "MB2001/MB3001/MB4001",               "stm32l486",        "l1_stm32l486.bin",     ),
+                "2050": BoardInfo(  "MB00QQ",               "stm32f301k8",        "l1_stm32f301k8.bin",     ),
               }
 
 mbed_vid = 0x0d28
@@ -110,6 +111,8 @@ class MbedBoard(Board):
             board_id = "2030"
         elif cpuTypeNum == 6:
             board_id = "2040"
+        elif cpuTypeNum == 8:
+            board_id = "2050"     
         self.name = "Unknown Board"
         if board_id in BOARD_ID_TO_INFO:
             board_info = BOARD_ID_TO_INFO[board_id]
