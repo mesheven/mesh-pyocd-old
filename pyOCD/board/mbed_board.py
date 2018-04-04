@@ -119,6 +119,7 @@ class MbedBoard(Board):
             self.name = board_info.name
             self.native_target = board_info.target
             self.test_binary = board_info.binary
+            target = board_info.target
 
         # Unless overridden use the native target
         if target is None:
