@@ -71,7 +71,7 @@ BOARD_ID_TO_INFO = {
                 "2020": BoardInfo(  "MB00YY",               "stm32f072",        "l1_stm32f072.bin",     ),
                 "2030": BoardInfo(  "MB00TT",               "stm32f031",        "l1_stm32f031.bin",     ),
                 "2040": BoardInfo(  "MB2001/MB3001/MB4001",               "stm32l486",        "l1_stm32l486.bin",     ),
-                "2050": BoardInfo(  "MB00QQ",               "stm32f301k8",        "l1_stm32f301k8.bin",     ),
+                "2050": BoardInfo(  "MB00QQ",               "stm32f301",        "l1_stm32f301.bin",     ),
               }
 
 mbed_vid = 0x0d28
@@ -94,7 +94,7 @@ class MbedBoard(Board):
         link.close()
         unique_id = link.get_unique_id()
         #Some work around for register tool. Have to detect the right CPU type before this and pass it into this function
-        #board_id = unique_id[0:4]
+        board_id = unique_id[0:4]
         if cpuTypeNum == 0:
             board_id = "1070"
         elif  cpuTypeNum == 7:

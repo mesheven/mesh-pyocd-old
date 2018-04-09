@@ -43,7 +43,7 @@ import target_lpc11xx_32
 import target_lpc824
 import target_stm32f031
 import target_stm32l486
-import target_stm32f301k8
+import target_stm32f301
 import semihost
 
 TARGET = {
@@ -75,5 +75,5 @@ TARGET = {
 	     'stm32f072': target_stm32f072.STM32F072,
           'stm32f031': target_stm32f031.STM32F031, 
           'stm32l486': target_stm32l486.STM32L486,
-          'stm32f301k8': target_stm32f301k8.STM32F301K8,                    
+          'stm32f301': target_stm32f301.STM32F301,                    
          }

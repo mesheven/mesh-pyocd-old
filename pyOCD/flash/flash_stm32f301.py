@@ -49,9 +49,9 @@ flash_algo = { 'load_address' : 0x20000000,
               };
 
 
-class Flash_stm32f301K8(Flash):
+class Flash_stm32f301(Flash):
 
     def __init__(self, target):
-        super(Flash_stm32f301K8, self).__init__(target, flash_algo)
+        super(Flash_stm32f301, self).__init__(target, flash_algo)
 
 

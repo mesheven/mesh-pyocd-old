@@ -33,7 +33,7 @@ DBGMCU_APB2_VAL = 0x0000001D
 
 
 
-class STM32F301K8(CortexM):
+class STM32F301(CortexM):
 
     memoryMap = MemoryMap(
         FlashRegion(    start=0x08000000,  length=0x10000,      blocksize=0x800, isBootMemory=True),
@@ -41,10 +41,10 @@ class STM32F301K8(CortexM):
         )
 
     def __init__(self, link):
-        super(STM32F301K8, self).__init__(link, self.memoryMap)
+        super(STM32F301, self).__init__(link, self.memoryMap)
 
     def init(self):
-        logging.debug('stm32f301K8 init')
+        logging.debug('stm32f301 init')
         CortexM.init(self)
         self.writeMemory(DBGMCU_CR, DBGMCU_VAL)
         self.writeMemory(DBGMCU_APB1_CR, DBGMCU_APB1_VAL)

@@ -38,7 +38,7 @@ from flash_lpc824 import Flash_lpc824
 from flash_stm32f072 import Flash_stm32f072
 from flash_stm32f031 import Flash_stm32f031
 from flash_stm32l486 import Flash_stm32l486
-from flash_stm32f301k8 import Flash_stm32f301K8
+from flash_stm32f301 import Flash_stm32f301
 
 
 FLASH = {
@@ -70,5 +70,5 @@ FLASH = {
          'stm32f072': Flash_stm32f072,
          'stm32f031': Flash_stm32f031,
          'stm32l486': Flash_stm32l486,
-         'stm32f301k8': Flash_stm32f301K8,       
+         'stm32f301': Flash_stm32f301,       
          }
