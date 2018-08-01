@@ -58,6 +58,13 @@ def _get_cpu_type(interface):
     cpu_type = raw_data[1]
     return cpu_type
 
+def _get_gpio_pins(interface):
+    """Get the gpio pins status from an interface"""
+    interface.write([0x83])
+    raw_data = bytearray(interface.read())
+    pins = raw_data[1] + (raw_data[2] << 8)
+    return pins
+    
 class _Transfer(object):
     """
     A wrapper object representing a command invoked by the layer above.
@@ -442,6 +449,10 @@ class DAPAccessUSB(DAPAccessIntf):
         self._cpu_type =  cpu_type
         return self._cpu_type
 
+    def get_gpio_pins(self):
+        pins  = _get_gpio_pins(self._interface)
+        return pins
+        
     def get_full_unique_id(self):
         return self._full_unique_id
 
